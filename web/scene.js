@@ -65,7 +65,13 @@
   const look = (from, to) => Math.atan2(-(to.z - from.z), -(to.x - from.x));
   const spawnAt = settleDry(at(7, 0));
   const SPAWN = {x: spawnAt.x, z: spawnAt.z, yaw: look(spawnAt, {x: start[0], z: start[1]}), pitch: 0.12};
-  const SPAWN_TRAY = (() => { const p = settleDry({x: tray.x - inland[0] * 2.0, z: tray.z - inland[1] * 2.0}); return {x: p.x, z: p.z, yaw: look(p, tray), pitch: 0.62}; })();
+  // Stand 2.4 m back and look at the middle of the tray's surface (eye 1.62 m; the
+  // tray top is 0.82 m above its own ground), so the whole islet is in view.
+  const SPAWN_TRAY = (() => {
+    const p = settleDry({x: tray.x - inland[0] * 2.4, z: tray.z - inland[1] * 2.4});
+    const d = Math.hypot(tray.x - p.x, tray.z - p.z), drop = (groundY(p.x, p.z) + 1.62) - (groundY(tray.x, tray.z) + 0.82);
+    return {x: p.x, z: p.z, yaw: look(p, tray), pitch: Math.atan2(drop, Math.max(d, 0.5))};
+  })();
   const SPAWN_NET = (() => { const p = settleDry({x: netPost.x - inland[0] * 2.2, z: netPost.z - inland[1] * 2.2}); return {x: p.x, z: p.z, yaw: look(p, {x: start[0], z: start[1]}), pitch: 0.18}; })();
   const SPAWNS = [SPAWN, SPAWN_TRAY, SPAWN_NET];
 

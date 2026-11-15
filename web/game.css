@@ -82,3 +82,8 @@ body.touch .desk, body:not(.touch) .touch { display:none }
   #hud-buttons { flex-wrap:nowrap } #hud-buttons button { padding:6px 9px }
   #goal { max-width:calc(100vw - 190px) }
 }
+
+/* Sound toggle: a struck-through note when muted. */
+#mute { position: relative; }
+#mute.off span { opacity: .45; }
+#mute.off::after { content: ""; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; background: currentColor; transform: rotate(-35deg); }

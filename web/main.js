@@ -18,6 +18,16 @@
     history.replaceState(null, "", location.pathname + location.search.replace(/([?&])new(=[^&]*)?(&|$)/, "$1").replace(/[?&]$/, ""));
   }
   const FOV = 62;
+  /* Portrait phones: widen the vertical view so the horizontal view never
+     drops below 52 degrees (the sand tray and the island otherwise get cut
+     off at the sides). Landscape keeps 62. */
+  const HFOV_MIN = 52, FOV_MAX = 90;
+  function viewFov() {
+    const r = canvas.getBoundingClientRect(), aspect = r.width / Math.max(r.height, 1);
+    if (aspect >= 1) return FOV;
+    const need = 2 * Math.atan(Math.tan(HFOV_MIN * Math.PI / 360) / aspect) * 180 / Math.PI;
+    return Math.min(FOV_MAX, Math.max(FOV, need));
+  }
   const TEX_MIPS = 1, TEX_CLAMP = 2 | 4, UNLIT = 1, LATE = 0x10000;
   const SOFTWARE = /llvmpipe|softpipe|lavapipe|swiftshader|software|basic render/i;
   const REACH = 2.0;
@@ -59,6 +69,7 @@
     Object.assign(G, {mode: "play", scene, reached: Math.max(G.reached, scene), step: "", busy: false});
     if (spawn) { me = Object.assign({}, spawn, {vx: 0, vz: 0}); placeView(); }
     $("title").hidden = true; $("hud").hidden = false; $("skip").hidden = false;
+    $("stick").hidden = !touchFirst;
     writeSave();
     canvas.focus({preventScroll: true});
   }
@@ -183,6 +194,7 @@
     const tickLay = () => {
       k++;
       showChain(chain, Math.ceil(links * k / frames));
+      if (window.Sound) Sound.clink();
       if (k < frames) setTimeout(tickLay, 2600 / frames);
       else { G.busy = false; done(); }
     };
@@ -214,6 +226,7 @@
     panelDismiss = dismiss || null;
     $("panel").hidden = false;
     $("panel").scrollTop = 0;
+    if (window.Sound) Sound.page();
     if (opts.after) opts.after();
     const focus = box.querySelector(".primary") || $("panel").querySelector("button");
     if (focus) focus.focus({preventScroll: true});
@@ -223,7 +236,7 @@
   function ask(title, html, choices, pick, opts) {
     panel(title, `${html}<div class="choices" id="choices">${choices.map((c) => `<button class="btn" type="button" data-id="${c.id}">${c.label}</button>`).join("")}</div>`, [], null,
       Object.assign({}, opts, {after: () => {
-        $("choices").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) pick(b.dataset.id); });
+        $("choices").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { if (window.Sound) Sound.commit(); pick(b.dataset.id); } });
       }}));
     // Nothing is picked for the player: focus rests on the panel, not a choice.
     $("panel").focus({preventScroll: true});
@@ -473,6 +486,7 @@
     if (G.cast.length === 2 && !G.halve) { predictHalve(); return; }
     G.busy = true;
     showNet(n.size);
+    if (window.Sound) Sound.whoosh();
     toast(`Casting the ${n.size} m net…`, 1600);
     setTimeout(() => { G.busy = false; G.cast.push(n); drawSlate(); netPanel(n); }, reducedMotion ? 50 : 1100);
   }
@@ -518,6 +532,7 @@
   }
   function finish() {
     G.mode = "free"; G.step = "free"; G.reached = 3; writeSave(true);
+    if (window.Sound) Sound.finale();
     $("skip").hidden = true;
     drawSlate();
     panel("What goes on the chart", `<ul class="learned">
@@ -653,7 +668,7 @@
     const a = $("arrow");
     if (!markerPoint || busy()) { a.hidden = true; return; }
     const rect = canvas.getBoundingClientRect();
-    const v = {x: me.x, y: eyeY, z: me.z, yaw: me.yaw, pitch: me.pitch, aspect: rect.width / Math.max(rect.height, 1), fov: FOV};
+    const v = {x: me.x, y: eyeY, z: me.z, yaw: me.yaw, pitch: me.pitch, aspect: rect.width / Math.max(rect.height, 1), fov: viewFov()};
     const p = K.project(v, markerPoint);
     a.hidden = p.on;
     if (!p.on) {
@@ -667,6 +682,7 @@
   addEventListener("keydown", (e) => {
     const k = e.key.toLowerCase();
     if (k === "escape" && panelDismiss) { panelDismiss(); return; }
+    if (k === "m" && !e.repeat) { toggleSound(); return; }
     if (busy()) return;
     if (k === "e" && !e.repeat) { useNow(); return; }
     if (k === "n" && !e.repeat) { notebookPanel(); return; }
@@ -677,9 +693,26 @@
   $("prompt").addEventListener("click", useNow);
   $("notebook").addEventListener("click", () => { if (!busy()) notebookPanel(); });
   $("skip").addEventListener("click", skipPanel);
+  function toggleSound() {
+    if (!window.Sound) return;
+    Sound.start();
+    const off = Sound.toggle();
+    syncMute();
+    toast(off ? "Sound off. M turns it back on." : "Sound on.", 1800);
+  }
+  function syncMute() {
+    if (!window.Sound) return;
+    const off = Sound.muted;
+    $("mute").setAttribute("aria-pressed", off ? "true" : "false");
+    $("mute").setAttribute("aria-label", off ? "Sound off (M to turn on)" : "Sound on (M to mute)");
+    $("mute").classList.toggle("off", off);
+  }
+  $("mute").addEventListener("click", toggleSound);
+  syncMute();
+  document.addEventListener("click", (e) => { if (window.Sound && e.target.closest(".btn")) Sound.click(); });
   $("help").addEventListener("click", () => {
     if (!$("panel").hidden) return;
-    const desk = "<p>W A S D or arrows: walk. Shift: run. Drag: look. E: use. N: notebook. Esc: close.</p>";
+    const desk = "<p>W A S D or arrows: walk. Shift: run. Drag: look. E: use. N: notebook. M: sound. Esc: close.</p>";
     const pad = "<p>Left stick: walk (push it all the way to run). Drag anywhere else: look. Yellow button: use.</p>";
     panel("Controls", touchFirst ? pad : desk, [{label: "Close", primary: true, run: closePanel}], closePanel);
   });
@@ -720,9 +753,10 @@
   function setEconomy(on) {
     economy = !!on;
     if (economy && kit) kit.dprCap = Math.min(kit.dprCap, 0.75);
-    mod._hall_set_view(economy ? 0.92 : 0.6, FOV);
+    mod._hall_set_view(economy ? 0.92 : 0.6, viewFov());
     setLights();
   }
+  addEventListener("resize", () => { if (mod) mod._hall_set_view(economy ? 0.92 : 0.6, viewFov()); });
   function buildWorld() {
     const m = S.build();
     skyMesh = m.sky; placeSky(true);
@@ -759,6 +793,7 @@
     add(resume > 1 ? `Continue: ${name(resume)}` : "Begin", true, () => startScene(resume, true));
     L.SCENES.forEach((s) => { if (s.n !== resume) add(name(s.n), false, () => startScene(s.n, true)); });
     $("title").hidden = false;
+    $("stick").hidden = true;   // the stick is for walking, not the title
     box.querySelector("button").focus({preventScroll: true});
   }
   async function boot() {
