@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Coastline</title>
+<meta name="description" content="Walk an island with a cartographer's chains and find out why its coast has no single length.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@700&family=IM+Fell+English&family=Libre+Baskerville:wght@400;700&display=swap">
+<link rel="stylesheet" href="game.css">
+</head>
+<body>
+<canvas id="island" tabindex="0" aria-label="An island in 3D. Walk with W A S D or the arrow keys, drag to look, and press E to use what is in front of you."></canvas>
+<header id="hud" hidden>
+  <div id="goal"><span id="scene"></span><strong id="objective"></strong></div>
+  <div id="hud-buttons">
+    <button id="notebook" type="button" aria-label="Notebook"><span class="wide">Notebook</span><span class="narrow" aria-hidden="true">Notes</span></button>
+    <button id="skip" type="button" aria-label="Skip scene" hidden><span class="wide">Skip scene</span><span class="narrow" aria-hidden="true">Skip</span></button>
+    <button id="help" type="button" aria-label="Controls">?</button>
+  </div>
+</header>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<div id="arrow" hidden aria-hidden="true"></div>
+<button id="prompt" type="button" hidden></button>
+<div id="stick" hidden aria-hidden="true"><div id="knob"></div></div>
+<section id="panel" role="dialog" aria-labelledby="panel-title" tabindex="-1" hidden>
+  <p id="panel-who" hidden></p>
+  <h2 id="panel-title"></h2>
+  <div id="panel-body"></div>
+  <div id="panel-buttons"></div>
+</section>
+<div id="fade" hidden aria-hidden="true"></div>
+<section id="title" hidden>
+  <div class="title-inner">
+    <p class="eyebrow">A game about fractals</p>
+    <h1>Coastline</h1>
+    <p>You are a cartographer's apprentice on a small island. Your first job sounds easy: measure the coast.</p>
+    <div id="title-buttons"></div>
+    <p class="keys desk">W A S D walk · Shift run · drag look · E use</p>
+    <p class="keys touch">Stick walks · drag looks · yellow button uses</p>
+  </div>
+</section>
+<noscript><p>Coastline needs JavaScript and WebGL 2.</p></noscript>
+<script src="vendor/strata-loader.js"></script>
+<script src="vendor/strata-kit.js"></script>
+<script src="vendor/hall-walk.js"></script>
+<script src="vendor/hall-controls.js"></script>
+<script src="fractal.js"></script>
+<script src="lessons.js"></script>
+<script src="scene.js"></script>
+<script src="main.js"></script>
+</body>
+</html>

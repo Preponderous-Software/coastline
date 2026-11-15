@@ -1,0 +1,84 @@
+/* A chart table by the sea: parchment, ink and a brass-yellow button over the 3D view. */
+:root {
+  --ink:#1B2433; --paper:#FBF6E6; --muted:#5A6272; --rule:#DCD3B8; --sea:#1E4E6B; --brass:#F2C14E; --chain:#B4471F; --land:#E8D9AE;
+  --display:"Libre Baskerville",Georgia,"Times New Roman",serif; --title:"IM Fell English",Georgia,serif;
+  --body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --tally:"Courier Prime","Courier New",monospace;
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
+  color-scheme:light;
+}
+*,*::before,*::after { box-sizing:border-box }
+[hidden] { display:none!important }
+html,body { height:100%; margin:0; overflow:hidden; background:#9cc3d6; color:var(--ink); font:400 1rem/1.45 var(--body); overscroll-behavior:none }
+button { font:inherit; color:inherit; cursor:pointer }
+h1,h2,p,ol,ul { margin:0 }
+canvas#island { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; outline:none }
+:focus-visible { outline:3px solid var(--brass); outline-offset:2px }
+
+#hud { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
+  padding:calc(10px + var(--sat)) calc(12px + var(--sar)) 0 calc(12px + var(--sal)); pointer-events:none; z-index:5 }
+#goal { display:grid; gap:1px; max-width:min(440px,60vw); padding:7px 12px; background:var(--paper); border-radius:6px; box-shadow:0 2px 8px rgba(20,25,40,.28) }
+#scene { font:700 .75rem var(--tally); letter-spacing:.06em; text-transform:uppercase; color:var(--sea) }
+#objective { font-size:.9375rem; line-height:1.3 }
+#hud-buttons { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:6px; pointer-events:auto }
+#hud-buttons button { min-height:40px; min-width:40px; padding:6px 10px; background:var(--paper); border:0; border-radius:6px; font-weight:700; font-size:.875rem; box-shadow:0 2px 8px rgba(20,25,40,.28) }
+
+#toast { position:fixed; left:50%; top:calc(96px + var(--sat)); transform:translateX(-50%); max-width:min(480px,calc(100vw - 32px)); width:max-content;
+  padding:9px 14px; background:var(--ink); color:#fff; border-radius:6px; font-size:.9375rem; line-height:1.35; z-index:6; text-align:center }
+
+#prompt { position:fixed; left:50%; bottom:calc(26px + var(--sab)); transform:translateX(-50%); min-height:48px; max-width:calc(100vw - 24px);
+  padding:9px 18px; background:var(--brass); color:var(--ink); border:2px solid var(--ink); border-radius:6px; font-weight:700; z-index:5 }
+#prompt kbd { font:700 .8125rem var(--tally); padding:1px 6px; margin-right:7px; background:var(--ink); color:var(--brass); border-radius:3px }
+/* On touch the button sits above the stick and clear of the thumb that looks. */
+body.touch #prompt { bottom:calc(150px + var(--sab)); min-height:54px; font-size:1.0625rem } body.touch #prompt kbd { display:none }
+
+#arrow { position:fixed; left:0; top:0; width:0; height:0; border-style:solid; border-width:11px 0 11px 22px; border-color:transparent transparent transparent var(--brass);
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); z-index:4; pointer-events:none }
+
+#stick { position:fixed; left:calc(22px + var(--sal)); bottom:calc(26px + var(--sab)); width:112px; height:112px; border-radius:50%;
+  background:rgba(251,246,230,.22); border:2px solid rgba(251,246,230,.7); touch-action:none; z-index:4 }
+#knob { position:absolute; left:50%; top:50%; width:48px; height:48px; margin:-24px; border-radius:50%; background:rgba(251,246,230,.85) }
+
+#panel { position:fixed; left:50%; bottom:calc(16px + var(--sab)); transform:translateX(-50%); width:min(580px,calc(100vw - 24px)); max-height:calc(100dvh - 32px - var(--sat) - var(--sab));
+  overflow:auto; display:grid; gap:9px; padding:15px 18px; background:var(--paper); border-radius:8px; box-shadow:0 6px 26px rgba(20,25,40,.45); z-index:8 }
+#panel-who { font:700 .75rem var(--tally); letter-spacing:.06em; text-transform:uppercase; color:var(--chain) }
+#panel h2 { font:700 1.35rem/1.2 var(--display); color:var(--sea); text-wrap:balance }
+#panel-body { display:grid; gap:8px } #panel-body > * { min-width:0 }
+#panel-buttons { display:flex; flex-wrap:wrap; gap:8px }
+.btn { min-height:46px; padding:8px 15px; background:transparent; border:2px solid var(--ink); border-radius:6px; font-weight:700; text-align:left }
+.btn.primary { background:var(--brass) }
+.btn[disabled] { opacity:.45; cursor:not-allowed }
+.choices { display:grid; gap:7px } .choices .btn { width:100% }
+.quote { font-style:italic }
+.big { font:700 1.6rem/1.1 var(--tally); color:var(--chain) }
+.fig { width:100%; height:min(250px,34dvh); display:block; background:#cfe3ea; border-radius:6px }
+.fig.tall { height:min(300px,40dvh); background:#fff }
+.cap { font-size:.8125rem; color:var(--muted) }
+.table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:.9375rem }
+.table th,.table td { padding:3px 8px 3px 0; border-bottom:1px solid var(--rule); text-align:right }
+.table th:first-child,.table td:first-child { text-align:left }
+.table .new { background:#fff1c4; font-weight:700 }
+.learned { padding-left:1.1em; display:grid; gap:5px }
+.cite { font-size:.8125rem; color:var(--muted) }
+
+#fade { position:fixed; inset:0; background:#eef6f7; opacity:0; transition:opacity .5s ease; z-index:7; pointer-events:none }
+#fade.on { opacity:1 }
+
+#title { position:fixed; inset:0; display:grid; align-items:end; background:linear-gradient(to top,rgba(14,42,60,.9),rgba(14,42,60,.3) 62%,transparent); color:#FBF6E6; z-index:9;
+  padding:24px max(20px,var(--sar)) calc(30px + var(--sab)) max(20px,var(--sal)); overflow:auto }
+.title-inner { display:grid; gap:10px; max-width:560px; margin-left:clamp(0px,6vw,80px) }
+.eyebrow { font:700 .8125rem var(--tally); letter-spacing:.08em; text-transform:uppercase }
+#title h1 { font:400 clamp(3.2rem,11vw,6rem)/.95 var(--title); color:var(--brass) }
+#title-buttons { display:flex; flex-wrap:wrap; gap:8px } #title .btn { border-color:#FBF6E6; color:#FBF6E6 } #title .btn.primary { color:var(--ink); border-color:var(--ink) }
+.keys { font:700 .8125rem var(--tally) }
+body.touch .desk, body:not(.touch) .touch { display:none }
+@media (prefers-reduced-motion: reduce) { #fade { transition:none } }
+.narrow { display:none }
+#panel:focus { outline:none }
+/* Phones: the HUD keeps to one row, with short labels. */
+@media (max-width: 520px) {
+  .wide { display:none } .narrow { display:inline }
+  #hud-buttons { flex-wrap:nowrap } #hud-buttons button { padding:6px 9px }
+  #goal { max-width:calc(100vw - 190px) }
+}
