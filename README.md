@@ -76,7 +76,7 @@ node tests/play.cjs shots   # needs the server running
 
 ## Related
 
-For self-reference and strange loops, see the GEB game (link TBD).
+For self-reference and strange loops (the Penrose tribar, the MIU puzzle), see [Tangle](https://github.com/Preponderous-Software/tangle), a sibling game. Coastline is about self-similarity you can measure; Tangle is about systems that refer to themselves.
 
 ## Credits
 
