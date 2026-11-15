@@ -28,7 +28,8 @@
     const lot = grew > 0.3;
     const right = lot ? choice === "lot" : choice === (grew > 0.05 ? "bit" : "settle");
     const was = `${fmtM(c10.length)} became ${fmtM(c1.length)}, ${Math.round(grew * 100)}% more`;
-    return {right, grew, text: right ? `You called it: ${was}.` : `It didn't settle: ${was}.`,
+    const miss = choice === "bit" ? "More than a little" : "It didn't settle";
+    return {right, grew, text: right ? `You called it: ${was}.` : `${miss}: ${was}.`,
       first: c100.length};
   }
 
@@ -67,12 +68,18 @@
     const id = mean < 2.15 ? "two" : mean > 3.6 ? "four" : "between";
     return {right: choice === id, ratio: mean, id};
   }
+  /* Scene 3's last guess: estimate the dimension from the halving ratio.
+     The right pick is whichever choice is nearest the measured dimension. */
   const SHAPE_CHOICES = [
-    {id: "line", label: "A line"},
-    {id: "area", label: "An area"},
-    {id: "between", label: "Something in between"},
+    {id: "1.1", label: "About 1.1"},
+    {id: "1.3", label: "About 1.3"},
+    {id: "1.5", label: "About 1.5"},
+    {id: "1.8", label: "About 1.8"},
   ];
-  const shapeVerdict = (choice, d) => ({right: choice === (d < 1.08 ? "line" : d > 1.9 ? "area" : "between"), d});
+  function shapeVerdict(choice, d) {
+    const near = SHAPE_CHOICES.map((c) => +c.id).reduce((a, b) => (Math.abs(b - d) < Math.abs(a - d) ? b : a));
+    return {right: +choice === near, d, near};
+  }
 
   /* Saves keep only how far the player has got. */
   function parseSave(raw) {

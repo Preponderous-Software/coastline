@@ -104,7 +104,7 @@ async function run(name, ctxOpts) {
   await ok(); await closed();
 
   /* ------------------------------------------ Scene 2: The Snowflake */
-  assert.equal(await p.evaluate(() => __coast.G.scene), 2);
+  await wait(() => __coast.G.scene === 2 && __coast.G.mode === "play", null, 10000);   // after the scene card
   await useAt("tray", 1.7, 0.6);
   await open(); assert.match(await title(), /A smaller island/); await shot("10-tray-intro"); await ok(); await closed();
   await wait(() => __coast.G.level === 1);
@@ -116,13 +116,17 @@ async function run(name, ctxOpts) {
   for (let k = 3; k <= 4; k++) { await useAt("tray", 1.7, 0.6); await wait((k) => __coast.G.level === k, k); }
   await p.waitForTimeout(300); await shot("13-tray-step4");
   await useAt("tray", 1.7, 0.6);
-  await open(); assert.match(await title(), /endless coast/); await shot("14-koch-reveal"); await overflow("koch reveal");
+  await open(); assert.match(await title(), /The area stops/); await shot("14-koch-reveal"); await overflow("koch reveal");
   const kochText = await p.textContent("#panel-body");
-  assert.match(kochText, /8\/5/); assert.match(kochText, /1\.600×/); assert.match(kochText, /You were right/);
+  assert.match(kochText, /8\/5/); assert.match(kochText, /1\.600×/); assert.match(kochText, /You called it/);
+  // the area figure must actually be drawn (it was blank once): some non-blank pixels on the canvas
+  assert.ok(await p.evaluate(() => { const c = document.getElementById("koch"); if (!c) return false; const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++; return n > 200; }), "Koch figure drawn");
+  await ok(); await open(); assert.match(await title(), /The coast doesn't/); await shot("14b-koch-coast");
+  assert.match(await p.textContent("#panel-body"), /4\/3 as long/);
   await ok(); await open(); assert.match(await title(), /Bays inside bays/); await ok(); await closed();
 
   /* ------------------------------------------------ Scene 3: The Net */
-  assert.equal(await p.evaluate(() => __coast.G.scene), 3);
+  await wait(() => __coast.G.scene === 3 && __coast.G.mode === "play", null, 10000);   // after the scene card
   await useAt("netPost", 1.8, 0.3);
   await open(); assert.match(await title(), /Count instead/); await ok(); await closed();
   await open(); assert.match(await title(), /16 m net/); await p.waitForTimeout(200); await shot("15-net-16");
@@ -134,7 +138,7 @@ async function run(name, ctxOpts) {
   await ok(); await open(); await wait(() => /2 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big"));
   await ok(); await open(); await wait(() => /1 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big")); await shot("17-net-1");
   console.log(name, "nets", counts.join(" / "));
-  await ok(); await open(); assert.match(await title(), /Line or area/); await p.click("#choices [data-id=between]");
+  await ok(); await open(); assert.match(await title(), /How rough/); await p.click('#choices [data-id="1.3"]');
   await open(); assert.match(await title(), /slope is the dimension/); await p.waitForTimeout(200); await shot("18-loglog"); await overflow("diagram");
   const dimText = await p.textContent("#panel-body"); console.log(name, "diagram:", dimText.replace(/\s+/g, " ").slice(0, 160));
   await ok(); await open(); assert.match(await title(), /Real coasts/); await shot("19-real-coasts"); await overflow("real coasts");

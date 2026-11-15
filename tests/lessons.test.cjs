@@ -18,8 +18,9 @@ t("Koch guesses: area settles, coast endless", () => {
 t("halving the mesh: between twice and four times", () => {
   const v = L.halveVerdict("between", s.nets); assert(v.right); assert(v.ratio > 2.15 && v.ratio < 2.6);
   assert.equal(L.halveVerdict("two", s.nets).right, false);
-  assert.equal(L.shapeVerdict("between", s.dimension).right, true);
-  assert.equal(L.shapeVerdict("line", 1.02).right, true);
+  assert.equal(L.shapeVerdict("1.3", s.dimension).right, true);
+  assert.equal(L.shapeVerdict("1.1", 1.02).right, true);
+  assert.equal(L.shapeVerdict("1.8", s.dimension).right, false);
 });
 t("every guess offers its choices with ids", () => {
   for (const set of [L.SETTLE_CHOICES, L.KOCH_AREA, L.KOCH_COAST, L.HALVE_CHOICES, L.SHAPE_CHOICES]) {

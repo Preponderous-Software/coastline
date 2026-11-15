@@ -14,7 +14,7 @@ html,body { height:100%; margin:0; overflow:hidden; background:#9cc3d6; color:va
 button { font:inherit; color:inherit; cursor:pointer }
 h1,h2,p,ol,ul { margin:0 }
 canvas#island { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; outline:none }
-:focus-visible { outline:3px solid var(--brass); outline-offset:2px }
+:focus-visible { outline:3px solid #1d2a33; outline-offset:2px; box-shadow:0 0 0 6px rgba(242,193,78,.85) }
 
 #hud { position:fixed; top:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;
   padding:calc(10px + var(--sat)) calc(12px + var(--sar)) 0 calc(12px + var(--sal)); pointer-events:none; z-index:5 }
@@ -87,3 +87,15 @@ body.touch .desk, body:not(.touch) .touch { display:none }
 #mute { position: relative; }
 #mute.off span { opacity: .45; }
 #mute.off::after { content: ""; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; background: currentColor; transform: rotate(-35deg); }
+
+/* The ending: a clear "it's over" marker, the guess tally, and what's next. */
+.kicker { font: 700 .78rem/1.2 "Courier Prime", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #9a4a2a; margin: 0 0 .4rem; }
+.tally { font-weight: 700; }
+.next { font-style: italic; opacity: .8; font-size: .92em; }
+
+/* A verdict leads its panel: did the player's guess hold? */
+.verdict { font-weight: 700; }
+
+/* The scene card shown during a scene change. */
+#fade { display:flex; align-items:center; justify-content:center; }
+#fade-card { font: 400 clamp(1.6rem, 5vw, 2.6rem)/1.2 "IM Fell English", Georgia, serif; color:#1d3b4a; margin:0; padding:0 24px; text-align:center; }

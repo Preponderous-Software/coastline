@@ -97,7 +97,7 @@
       : `<p>Goes to scene ${G.scene + 1}, ${next.name}. Replay any scene from the title.</p>`, [
       {label: last ? "Skip to the end" : `Skip to scene ${G.scene + 1}`, primary: true, run: () => {
         closePanel();
-        if (last) { G.cast = survey.nets.slice(); finish(); } else { const n = G.scene + 1; fadeTo(() => { prepare(n); startScene(n, false); placeAt(S.SPAWNS[n - 1]); }); }
+        if (last) { G.cast = survey.nets.slice(); finish(); } else { nextScene(G.scene + 1); }
       }},
       {label: "Keep going", run: closePanel},
     ], closePanel);
@@ -226,6 +226,7 @@
     panelDismiss = dismiss || null;
     $("panel").hidden = false;
     $("panel").scrollTop = 0;
+    clearTimeout(toastTimer); $("toast").hidden = true;   // no "Laying the chain…" left above a result
     if (window.Sound) Sound.page();
     if (opts.after) opts.after();
     const focus = box.querySelector(".primary") || $("panel").querySelector("button");
@@ -236,6 +237,8 @@
   function ask(title, html, choices, pick, opts) {
     panel(title, `${html}<div class="choices" id="choices">${choices.map((c) => `<button class="btn" type="button" data-id="${c.id}">${c.label}</button>`).join("")}</div>`, [], null,
       Object.assign({}, opts, {after: () => {
+        // Run the caller's own after (e.g. drawing the Koch figure) as well as wiring the choices.
+        if (opts && opts.after) opts.after();
         $("choices").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { if (window.Sound) Sound.commit(); pick(b.dataset.id); } });
       }}));
     // Nothing is picked for the player: focus rests on the panel, not a choice.
@@ -247,16 +250,22 @@
   }
   const busy = () => !$("panel").hidden || G.mode === "title";
   let fading = false;
-  function fadeTo(fn) {
+  /* A fade, optionally with a title card ("Scene 2 · The Snowflake") held for
+     a beat so a new scene feels like a new scene. */
+  function fadeTo(fn, card) {
     const f = $("fade");
+    $("fade-card").textContent = card || "";
     f.hidden = false; fading = true;
     requestAnimationFrame(() => f.classList.add("on"));
+    const hold = reducedMotion ? (card ? 900 : 0) : card ? 1500 : 520;
     setTimeout(() => {
       fn(); fading = false;
       f.classList.remove("on");
-      setTimeout(() => { f.hidden = true; }, reducedMotion ? 0 : 520);
-    }, reducedMotion ? 0 : 520);
+      setTimeout(() => { f.hidden = true; $("fade-card").textContent = ""; }, reducedMotion ? 0 : 520);
+    }, hold);
   }
+  const sceneCard = (n) => `Scene ${n} · ${L.SCENES[n - 1].name}`;
+  function nextScene(n) { fadeTo(() => { prepare(n); startScene(n, false); placeAt(S.SPAWNS[n - 1]); }, sceneCard(n)); }
 
   /* -------------------------------------------------------- the figures
      Drawn on a canvas in the panel, sized to it, so they read on a phone. */
@@ -323,7 +332,7 @@
     const lx = nets.map((n) => Math.log2(1 / n.size)), ly = nets.map((n) => Math.log2(n.count));
     const gx0 = Math.min(...lx) - 0.4, gx1 = Math.max(...lx) + 0.4;
     const gy0 = Math.min(...ly) - 0.8, gy1 = gy0 + (gx1 - gx0) * 2 + 0.4;   // room for the slope-2 line
-    const L0 = 46, R0 = 14, T0 = 12, B0 = 38;
+    const L0 = 60, R0 = 14, T0 = 12, B0 = 38;   // room for "16384" plus the rotated axis title
     const X = (v) => L0 + (v - gx0) / (gx1 - gx0) * (w - L0 - R0), Y = (v) => h - B0 - (v - gy0) / (gy1 - gy0) * (h - T0 - B0);
     x.strokeStyle = "#dcd3b8"; x.lineWidth = 1; x.font = `12px ${FONT}`; x.fillStyle = "#5a6272";
     nets.forEach((n, i) => { x.beginPath(); x.moveTo(X(lx[i]), T0); x.lineTo(X(lx[i]), h - B0); x.stroke(); x.textAlign = "center"; x.fillText(`${n.size} m`, X(lx[i]), h - B0 + 16); });
@@ -332,12 +341,12 @@
       if (v % 2 === 0) { x.textAlign = "right"; x.fillText(String(2 ** v), L0 - 6, Y(v) + 4); }
     }
     x.textAlign = "center"; x.fillText("mesh (halving each step) →", (L0 + w - R0) / 2, h - 6);
-    x.save(); x.translate(12, (T0 + h - B0) / 2); x.rotate(-Math.PI / 2); x.fillText("squares touched", 0, 0); x.restore();
+    x.save(); x.translate(11, (T0 + h - B0) / 2); x.rotate(-Math.PI / 2); x.fillText("squares touched", 0, 0); x.restore();
     const ref = (slope, col, label) => {
       x.setLineDash([5, 4]); x.strokeStyle = col; x.lineWidth = 1.5;
       const a = [lx[0], ly[0]], b = [lx[lx.length - 1], ly[0] + slope * (lx[lx.length - 1] - lx[0])];
       x.beginPath(); x.moveTo(X(a[0]), Y(a[1])); x.lineTo(X(b[0]), Y(b[1])); x.stroke(); x.setLineDash([]);
-      x.fillStyle = col; x.textAlign = "right"; x.fillText(label, X(b[0]) - 4, Y(b[1]) - 6);
+      x.fillStyle = col; x.textAlign = "right"; x.fillText(label, X(b[0]) - 4, slope === 1 ? Y(b[1]) + 16 : Y(b[1]) - 6);   // the line's label sits below it, clear of the coast
     };
     ref(1, "#7f8a90", "a line: slope 1");
     ref(2, "#7f8a90", "an area: slope 2");
@@ -372,9 +381,10 @@
   function chainPanel(c) {
     const prev = G.laid[G.laid.length - 2];
     const body = [`<p class="big">${fmtM(c.length)}</p>`];
-    body.push(`<p>${c.steps.toLocaleString("en-US")} full chains, then ${fmtM(c.rest)} back to the stake.${prev ? ` That's ${fmtM(c.length - prev.length)} more than the ${prev.ruler} m chain.` : ""}</p>`);
+    if (c.ruler === 1) body.push(`<p class="verdict">${L.settleVerdict(G.settle, G.laid).text}</p>`);
+    const rest = fmtM(c.rest) === fmtM(0) ? "" : `, then ${fmtM(c.rest)} back to the stake`;
+    body.push(`<p>${c.steps.toLocaleString("en-US")} full chains${rest}.${prev ? ` That's ${fmtM(c.length - prev.length)} more than the ${prev.ruler} m chain.` : ""}</p>`);
     body.push(figure("map"));
-    if (c.ruler === 1) body.push(`<p>${L.settleVerdict(G.settle, G.laid).text}</p>`);
     panel(`The ${c.ruler} m chain`, body.join(""), [{label: "Write it down", primary: true, run: () => { closePanel(); afterChain(c); }}], null,
       {after: () => drawMap("map", {chain: c, label: `The ${c.ruler} m chain laid round the island, from the stake by the cairn.`})});
   }
@@ -408,7 +418,7 @@
     panel("Richardson's rulers", `<p>Lewis Fry Richardson measured real coasts and borders with shorter and shorter rulers. Every time, the length grew, and each coast grew at its own steady rate.</p>
       <table class="table"><thead><tr><th>Your chain</th><th>Coast</th></tr></thead><tbody>${rowsHtml}</tbody></table>
       <p>In 1967 Benoit Mandelbrot used his numbers in a paper with a famous title: <em>How long is the coast of Britain?</em></p>`,
-    [{label: "On to the snowflake", primary: true, run: () => { closePanel(); G.reached = Math.max(G.reached, 2); writeSave(); startSnowflake(false); }}], null);
+    [{label: "On to the snowflake", primary: true, run: () => { closePanel(); G.reached = Math.max(G.reached, 2); writeSave(); nextScene(2); }}], null);
   }
 
   /* --------------------------------------------------- 2: The Snowflake */
@@ -451,17 +461,24 @@
   function kochReveal() {
     G.step = "reveal";
     const v = L.kochVerdict(G.kochArea, G.kochCoast);
-    const rowsHtml = v.rows.map((r) => `<tr class="${r.step === L.KOCH_STEPS + 1 ? "new" : ""}"><td>${r.step}${r.step > L.KOCH_STEPS ? " (next)" : ""}</td><td>${r.edges.toLocaleString("en-US")}</td><td>${L.fmt(r.coast)}×</td><td>${L.fmt(r.area, 3)}×</td></tr>`).join("");
-    const area = v.areaRight ? "You were right: the area levels off." : "The area levels off.";
-    const coast = v.coastRight ? "and you were right about the coast too: it never stops." : "but the coast never stops.";
-    panel("A small island with an endless coast", `<table class="table"><thead><tr><th>Step</th><th>Edges</th><th>Coast</th><th>Area</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-      <p>${area} It closes in on <strong>8/5 of the triangle</strong> (${L.fmt(v.limit, 3)}×) and never passes it, ${coast} Each step makes it <strong>4/3 as long</strong>: ${Math.round(L.kochCoastAfter(20))}× after 20 steps, ${Math.round(L.kochCoastAfter(40)).toLocaleString("en-US")}× after 40.</p>`,
+    const now = v.rows[L.KOCH_STEPS];
+    const areaSay = G.kochArea == null ? "" : v.areaRight ? "You called it. " : "Not this time. ";
+    panel("The area stops", `<p class="verdict">${areaSay}The area levels off.</p>${figure("koch")}
+      <p>After ${L.KOCH_STEPS} steps it is ${L.fmt(now.area, 3)}× the triangle. However many bumps you add, it closes in on <strong>8/5</strong> (${L.fmt(v.limit, 3)}×) and never passes it.</p>`,
+    [{label: "And the coast?", primary: true, run: () => kochCoastReveal(v)}], null, {after: () => drawKoch("koch", L.KOCH_STEPS)});
+  }
+  function kochCoastReveal(v) {
+    const now = v.rows[L.KOCH_STEPS];
+    const coastSay = G.kochCoast == null ? "" : v.coastRight ? "You called it. " : "Surprise. ";
+    panel("The coast doesn't", `<p class="verdict">${coastSay}The coast never stops growing.</p>
+      <p>Every step makes it <strong>4/3 as long</strong>: ${L.fmt(now.coast)}× after ${L.KOCH_STEPS} steps, ${Math.round(L.kochCoastAfter(20))}× after 20, ${Math.round(L.kochCoastAfter(40)).toLocaleString("en-US")}× after 40.</p>
+      <p>A small island with an endless coast.</p>`,
     [{label: "What has this to do with my island?", primary: true, run: snowflakeLink}], null);
   }
   function snowflakeLink() {
     panel("Bays inside bays", `<p>Your island isn't tidy like this, but it's built the same way. Look closely at a bay and it has smaller bays, and those have smaller ones.</p>
       <p>That's why each shorter chain found more. Mathematicians call shapes like this <strong>fractals</strong>.</p>`,
-    [{label: "On to the net", primary: true, run: () => { closePanel(); G.reached = Math.max(G.reached, 3); writeSave(); startNet(false); }}], null, {who: MAREN});
+    [{label: "On to the net", primary: true, run: () => { closePanel(); G.reached = Math.max(G.reached, 3); writeSave(); nextScene(3); }}], null, {who: MAREN});
   }
 
   /* ---------------------------------------------------------- 3: The Net */
@@ -498,7 +515,7 @@
     body.push(figure("map"));
     if (G.cast.length === 3) {
       const v = L.halveVerdict(G.halve, G.cast);
-      body.push(`<p>${v.right ? "You called it." : "Not quite."} Each halving gives about ${L.fmt(v.ratio)}× the squares: more than a line, less than a field.</p>`);
+      body.push(`<p class="verdict">${v.right ? "You called it." : "Not quite."} Between twice and four times: more than a line, less than a field.</p>`);
     }
     const more = nextNet();
     panel(`The ${n.size} m net`, body.join(""), [{label: more ? `Cast the ${more.size} m net` : "Count them up", primary: true, run: () => { closePanel(); if (more) castNet(); else askShape(); }}], null,
@@ -511,13 +528,13 @@
     L.HALVE_CHOICES, (id) => { G.halve = id; closePanel(); castNet(); }, {who: "Your guess"});
   }
   function askShape() {
-    ask("Line or area?", `<p>A line doubles its squares when the mesh halves. An area quadruples. Your coast multiplied by about ${L.fmt(L.halveVerdict("between", survey.nets).ratio)} each time.</p><p>So is the coast a line or an area?</p>`,
+    ask("How rough is it?", `<p>Each time the mesh halved, the coast touched about ${L.fmt(L.halveVerdict("between", survey.nets).ratio)}× the squares.</p><p>A line gives 2× and has dimension 1. A field gives 4× and has dimension 2. What dimension would you give the coast?</p>`,
       L.SHAPE_CHOICES, (id) => { G.shape = id; diagramPanel(); }, {who: "Your guess"});
   }
   function diagramPanel() {
     const v = L.shapeVerdict(G.shape, survey.dimension), d = survey.dimension.toFixed(2);
     panel("The slope is the dimension", `${figure("loglog", "tall")}
-      <p>${v.right ? "Yes: in between." : "In between."} Each dot is one net, on scales that double. A line's dots climb at slope 1; an area's at slope 2. Your coast climbs at <strong>${d}</strong>.</p>
+      <p>${v.right ? `You said about ${G.shape}: well judged.` : `You said about ${G.shape}. It's ${d}.`} Each dot is one net, on scales that double. A line's dots climb at slope 1; an area's at slope 2. Your coast climbs at <strong>${d}</strong>, because 2 to the power ${d} is the ${L.fmt(Math.pow(2, survey.dimension))}× you saw.</p>
       <p>That slope is the coast's <strong>fractal dimension</strong>: more than a line, less than an area.</p>`,
     [{label: "And real coasts?", primary: true, run: realPanel}], null, {after: () => drawLogLog("loglog")});
   }
@@ -534,13 +551,24 @@
     G.mode = "free"; G.step = "free"; G.reached = 3; writeSave(true);
     if (window.Sound) Sound.finale();
     $("skip").hidden = true;
+    goal("Chart finished ✓");
     drawSlate();
-    panel("What goes on the chart", `<ul class="learned">
+    // Count only the guesses actually made (a skipped scene asks nothing).
+    const calls = [];
+    if (G.settle) calls.push(L.settleVerdict(G.settle, survey.chains).right);
+    if (G.kochArea || G.kochCoast) { const k = L.kochVerdict(G.kochArea, G.kochCoast); if (G.kochArea) calls.push(k.areaRight); if (G.kochCoast) calls.push(k.coastRight); }
+    if (G.halve && G.cast.length >= 3) calls.push(L.halveVerdict(G.halve, G.cast).right);
+    if (G.shape) calls.push(L.shapeVerdict(G.shape, survey.dimension).right);
+    const right = calls.filter(Boolean).length;
+    const tally = calls.length ? `<p class="tally">You made ${calls.length} guess${calls.length === 1 ? "" : "es"} and called ${right === calls.length ? "every one" : right === 0 ? "none of them" : `${right} of them`}.${right < calls.length ? " The surprises are the point." : ""}</p>` : "";
+    panel("The chart is finished", `<p class="kicker">End of chapter one</p><ul class="learned">
       <li>Coast length: <strong>it depends on your ruler</strong>. ${fmtM(survey.chains[0].length)} with 100 m, ${fmtM(survey.chains[1].length)} with 10 m, ${fmtM(survey.chains[2].length)} with 1 m.</li>
       <li>A shape can hold a fixed area inside an endless coast.</li>
       <li>Coast dimension: <strong>${survey.dimension.toFixed(2)}</strong>, between a line and an area.</li></ul>
-      <p>Thank you, apprentice. The island is yours to walk.</p>`,
-    [{label: "Walk the island", primary: true, run: () => { closePanel(); goal("Walk the island."); }}, {label: "Back to the title", run: () => { closePanel(); showTitle(); }}], null, {who: MAREN});
+      ${tally}
+      <p>Thank you, apprentice. The island is yours to walk.</p>
+      <p class="next">Chapter two is still being drawn: the keeper's rule, the living edge, and a coast of your own.</p>`,
+    [{label: "Walk the island", primary: true, run: () => { closePanel(); clearSlot(SLOT.net); goal("Chart finished ✓ · walk where you like."); }}, {label: "Back to the title", run: () => { closePanel(); showTitle(); }}], null, {who: MAREN});
   }
 
   /* ------------------------------------------------------- the notebook */
@@ -712,7 +740,7 @@
   document.addEventListener("click", (e) => { if (window.Sound && e.target.closest(".btn")) Sound.click(); });
   $("help").addEventListener("click", () => {
     if (!$("panel").hidden) return;
-    const desk = "<p>W A S D or arrows: walk. Shift: run. Drag: look. E: use. N: notebook. M: sound. Esc: close.</p>";
+    const desk = "<p>W S or ↑ ↓: walk. A D: step sideways. ← →: turn. Drag: look. Shift: run. E: use. N: notebook. M: sound. Esc: close.</p>";
     const pad = "<p>Left stick: walk (push it all the way to run). Drag anywhere else: look. Yellow button: use.</p>";
     panel("Controls", touchFirst ? pad : desk, [{label: "Close", primary: true, run: closePanel}], closePanel);
   });

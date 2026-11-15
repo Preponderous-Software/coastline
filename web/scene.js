@@ -234,7 +234,8 @@
     // The net post with its rolled net.
     const ny = groundY(netPost.x, netPost.z) - 0.1;
     m.cylinder(netPost.x, ny, netPost.z, 0.09, 2.2, C.woodDark, 7);
-    m.box(netPost.x, ny + 1.1, netPost.z, 0.7, 0.35, 0.35, C.net, a);
+    // The bundle of nets hanging on the post: rope-coloured, so it reads as coiled net, not a blank sign.
+    m.box(netPost.x, ny + 1.1, netPost.z, 0.5, 0.3, 0.3, [0.55, 0.43, 0.27], a);
     // The chain start: a white stake at the water's edge.
     m.cylinder(start[0], -0.3, start[1], 0.06, 1.3, [0.95, 0.95, 0.92], 6);
     for (const tr of trees) {
