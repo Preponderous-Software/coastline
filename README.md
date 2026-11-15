@@ -28,6 +28,14 @@ Keyboard: W A S D or arrows walk, Shift runs, drag to look, E uses, N opens the 
 
 Any scene can be picked from the title screen, and **Skip scene** moves on during play.
 
+## Playing
+
+- **Controls:** W S or ↑ ↓ walk, A D step sideways, ← → turn, drag to look, Shift runs, E uses, N opens the notebook, M toggles sound, Esc closes a panel. On a phone: the stick walks, dragging anywhere else looks, and the yellow button uses. The camera never turns by itself.
+- **Sound:** synthesised in the browser (waves and soft cues, no audio files). It starts on the first click, and the ♪ button or M mutes it; the choice is remembered. It pauses while the window is hidden.
+- **Works offline:** the fonts are bundled (SIL Open Font License, licences in `web/fonts/`).
+- **Phones:** portrait screens get a wider field of view, so the sand tray and the island fit. On short landscape screens panels sit on the right, keeping the goal and the stick in view.
+- **Progress** is saved (`coastline.v1`). The title offers "Continue", any scene can be picked, and `--new` (or `?new`) starts over.
+
 ## What's measured
 
 Nothing in the game is typed in by hand. Every number is computed from one coastline.
@@ -70,7 +78,7 @@ For self-reference and strange loops, see the GEB game (link TBD).
 - Story and code drafted by Claude on behalf of Daniel Stephenson.
 - The engine is Strata with the arcade hall's walking and controls. The structure follows Second Helping, Daniel Stephenson's ranked-choice fair game.
 - The ideas come from Lewis Fry Richardson's coast and border measurements, Benoit Mandelbrot, "How Long Is the Coast of Britain? Statistical Self-Similarity and Fractional Dimension", *Science* 156 (1967), and Helge von Koch's snowflake (1904).
-- Fonts: Atkinson Hyperlegible, Libre Baskerville, IM Fell English and Courier Prime, from Google Fonts.
+- Fonts: Atkinson Hyperlegible, Libre Baskerville, IM Fell English and Courier Prime (SIL Open Font License 1.1), bundled from Google Fonts in `web/fonts/`.
 
 ## License
 
