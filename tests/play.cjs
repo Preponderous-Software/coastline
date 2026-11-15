@@ -1,7 +1,7 @@
 /* Plays scenes 1-3 in a real browser on Strata (software GL), on a desktop
    and two phones, and screenshots each scene. Needs the server running:
      cd web && python3 -m http.server 8783 --bind 127.0.0.1
-     NODE_PATH=/root/arcade-watch/node_modules node tests/play.cjs <screenshot-dir> */
+     node tests/play.cjs <screenshot-dir>   (needs playwright: npm i --no-save playwright) */
 const {chromium, devices} = require("playwright");
 const assert = require("assert");
 const fs = require("fs");

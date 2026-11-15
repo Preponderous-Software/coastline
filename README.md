@@ -10,6 +10,10 @@ This is a local first playable of scenes 1 to 3. It has no remote and isn't publ
 2. **The Snowflake:** add bumps to every edge of a triangle islet in the sand tray. Guess where the area and the coastline end up. The area stops at 8/5 of the triangle, but the coast grows 4/3 longer at every step, without end.
 3. **The Net:** cast nets of shrinking mesh over the coast and count the squares it touches. Guess what halving the mesh does. Only then does the log–log diagram appear: its slope is the coast's dimension, between a line (1) and an area (2). Last, real coasts for comparison.
 
+## Play it online
+
+https://coastline.play.danielstephenson.dev (deployed by CI from `main`).
+
 ## Run it
 
 ```sh
@@ -64,7 +68,8 @@ Nothing in the game is typed in by hand. Every number is computed from one coast
 node tests/fractal.test.cjs
 node tests/lessons.test.cjs
 node tests/scene.test.cjs
-NODE_PATH=/root/arcade-watch/node_modules node tests/play.cjs shots   # needs the server running
+npm i --no-save playwright@1.61.1 && npx playwright install chromium   # once
+node tests/play.cjs shots   # needs the server running
 ```
 
 `tests/play.cjs` plays scenes 1 to 3 in Chromium with software GL on a desktop, a Pixel 7 and an iPhone 14 viewport. It takes screenshots of each scene and fails on console errors or horizontal overflow. Set `BASE` to test another address.
@@ -82,4 +87,4 @@ For self-reference and strange loops, see the GEB game (link TBD).
 
 ## License
 
-No license has been chosen for the game's own code yet. The files in `web/vendor/` keep their own licenses, listed in [web/vendor/README.md](web/vendor/README.md). The arcade hall files are under the Stephenson Software Non-Commercial License, see `web/vendor/LICENSE-arcade.md`.
+The game's own code is MIT-licensed (see [LICENSE](LICENSE)). The files in `web/vendor/` keep their own licenses, listed in [web/vendor/README.md](web/vendor/README.md): the arcade hall's engine and walking code are under the Stephenson Software Non-Commercial License (`web/vendor/LICENSE-arcade.md`). The bundled fonts are under the SIL Open Font License 1.1 (`web/fonts/OFL-*.txt`).
