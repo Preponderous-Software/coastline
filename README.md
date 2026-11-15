@@ -18,7 +18,11 @@ cd web && python3 -m http.server 8783 --bind 127.0.0.1
 
 Then open http://127.0.0.1:8783/. Add `?economy=1` for the low-detail mode.
 
-On the Windows desktop, `play-coastline.bat` (also in `tools/`) copies this folder from WSL to `%USERPROFILE%\coastline-play` and serves it on http://127.0.0.1:8784/ with `py -3`. Pass `economy` for the low-detail mode.
+On the Windows desktop, `play-coastline.bat` (also in `tools/`) boots Coastline as a desktop app, like the other games there. It copies this folder from WSL to `%USERPROFILE%\coastline-play`, serves it on 127.0.0.1:8784 with `py -3`, and opens it in its own window (Microsoft Edge in app mode: no tabs or address bar, its own taskbar entry and profile in `%LOCALAPPDATA%\Coastline\window`, so progress is kept between runs). Closing the window stops the server.
+
+- `play-coastline.bat --new`: start over; the old progress is kept as the previous save (`coastline.v1.previous`).
+- `play-coastline.bat --economy`: the low-detail mode.
+- `play-coastline.bat --browser`: your normal browser instead of an app window.
 
 Keyboard: W A S D or arrows walk, Shift runs, drag to look, E uses, N opens the notebook. Touch: left stick walks (push it all the way to run), drag anywhere else to look, tap the yellow button to use. The camera turns only when you turn it.
 

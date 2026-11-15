@@ -10,6 +10,13 @@
   const touchFirst = matchMedia("(hover: none), (pointer: coarse)").matches;
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const SAVE_KEY = "coastline.v1";
+  // ?new (the desktop launcher's --new): start over, keeping the old progress as the previous save.
+  if (params.has("new")) {
+    const old = StrataKit.store.get(SAVE_KEY);
+    if (old) StrataKit.store.set(SAVE_KEY + ".previous", old);
+    StrataKit.store.set(SAVE_KEY, JSON.stringify({reached: 1, done: false}));
+    history.replaceState(null, "", location.pathname + location.search.replace(/([?&])new(=[^&]*)?(&|$)/, "$1").replace(/[?&]$/, ""));
+  }
   const FOV = 62;
   const TEX_MIPS = 1, TEX_CLAMP = 2 | 4, UNLIT = 1, LATE = 0x10000;
   const SOFTWARE = /llvmpipe|softpipe|lavapipe|swiftshader|software|basic render/i;
