@@ -348,7 +348,10 @@
       x.setLineDash([5, 4]); x.strokeStyle = col; x.lineWidth = 1.5;
       const a = [lx[0], ly[0]], b = [lx[lx.length - 1], ly[0] + slope * (lx[lx.length - 1] - lx[0])];
       x.beginPath(); x.moveTo(X(a[0]), Y(a[1])); x.lineTo(X(b[0]), Y(b[1])); x.stroke(); x.setLineDash([]);
-      x.fillStyle = col; x.textAlign = "right"; x.fillText(label, X(b[0]) - 4, slope === 1 ? Y(b[1]) + 16 : Y(b[1]) - 6);   // the line's label sits below it, clear of the coast
+      // labelled in a legend (top left, clear of the data) rather than on the line itself
+      const row = slope === 1 ? 1 : 0;
+      x.setLineDash([5, 4]); x.beginPath(); x.moveTo(L0 + 8, T0 + 10 + row * 16); x.lineTo(L0 + 30, T0 + 10 + row * 16); x.stroke(); x.setLineDash([]);
+      x.fillStyle = col; x.textAlign = "left"; x.fillText(label, L0 + 36, T0 + 14 + row * 16);
     };
     ref(1, "#7f8a90", "a line: slope 1");
     ref(2, "#7f8a90", "an area: slope 2");
@@ -382,8 +385,9 @@
   }
   function chainPanel(c) {
     const prev = G.laid[G.laid.length - 2];
-    const body = [`<p class="big">${fmtM(c.length)}</p>`];
+    const body = [];
     if (c.ruler === 1) body.push(`<p class="verdict">${L.settleVerdict(G.settle, G.laid).text}</p>`);
+    body.push(`<p class="big">${fmtM(c.length)}</p>`);
     const rest = fmtM(c.rest) === fmtM(0) ? "" : `, then ${fmtM(c.rest)} back to the stake`;
     body.push(`<p>${c.steps.toLocaleString("en-US")} full chains${rest}.${prev ? ` That's ${fmtM(c.length - prev.length)} more than the ${prev.ruler} m chain.` : ""}</p>`);
     body.push(figure("map"));
@@ -502,7 +506,7 @@
   function castNet() {
     const n = nextNet();
     if (!n) return;
-    if (G.cast.length === 2 && !G.halve) { predictHalve(); return; }
+    if (G.cast.length === 1 && !G.halve) { predictHalve(); return; }   // guess before any halving is seen
     G.busy = true;
     showNet(n.size);
     if (window.Sound) Sound.whoosh();
@@ -511,22 +515,23 @@
   }
   function netPanel(n) {
     const prev = G.cast[G.cast.length - 2];
-    const body = [`<p class="big">${n.count.toLocaleString("en-US")} squares</p>`];
+    const body = [];
+    if (G.cast.length === 2 && G.halve) {
+      const v = L.halveVerdict(G.halve, G.cast);
+      body.push(`<p class="verdict">${v.right ? "You called it." : "Not this time."} Between twice and four times: more than a line, less than a field.</p>`);
+    }
+    body.push(`<p class="big">${n.count.toLocaleString("en-US")} squares</p>`);
     if (prev) body.push(`<p>Half the mesh, ${L.fmt(n.count / prev.count)}× the squares.</p>`);
     else body.push(`<p>Each square is ${n.size} m across. The coast passes through ${n.count} of them.</p>`);
     body.push(figure("map"));
-    if (G.cast.length === 3) {
-      const v = L.halveVerdict(G.halve, G.cast);
-      body.push(`<p class="verdict">${v.right ? "You called it." : "Not quite."} Between twice and four times: more than a line, less than a field.</p>`);
-    }
     const more = nextNet();
     panel(`The ${n.size} m net`, body.join(""), [{label: more ? `Cast the ${more.size} m net` : "Count them up", primary: true, run: () => { closePanel(); if (more) castNet(); else askShape(); }}], null,
       {after: () => drawMap("map", {net: n.size, label: `The ${n.size} m net over the island: ${n.count} squares touch the coast.`})});
   }
   function predictHalve() {
-    const [a, b] = G.cast;
-    ask("Halve it again", `<p>The ${a.size} m net touched ${a.count}. The ${b.size} m net touched ${b.count}.</p>
-      <p>Halve the mesh, and a straight line passes through about twice as many squares. A field covers four times as many. The coast will touch…</p>`,
+    const [a] = G.cast;
+    ask("Halve the mesh", `<p>The ${a.size} m net touched ${a.count} squares. Next comes the ${a.size / 2} m net, half the mesh.</p>
+      <p>A straight line would pass through about twice as many squares. A field would cover four times as many. The coast will touch…</p>`,
     L.HALVE_CHOICES, (id) => { G.halve = id; closePanel(); castNet(); }, {who: "Your guess"});
   }
   function askShape() {
@@ -535,8 +540,8 @@
   }
   function diagramPanel() {
     const v = L.shapeVerdict(G.shape, survey.dimension), d = survey.dimension.toFixed(2);
-    panel("The slope is the dimension", `${figure("loglog", "tall")}
-      <p>${v.right ? `You said about ${G.shape}: well judged.` : `You said about ${G.shape}. It's ${d}.`} Each dot is one net, on scales that double. A line's dots climb at slope 1; an area's at slope 2. Your coast climbs at <strong>${d}</strong>, because 2 to the power ${d} is the ${L.fmt(Math.pow(2, survey.dimension))}× you saw.</p>
+    panel("The slope is the dimension", `<p class="verdict">${v.right ? `You called it: about ${G.shape}.` : `Not this time: you said about ${G.shape}, and it's ${d}.`}</p>${figure("loglog", "tall")}
+      <p>Each dot is one net, on scales that double. A line's dots climb at slope 1; an area's at slope 2. Your coast climbs at <strong>${d}</strong>, because 2 to the power ${d} is the ${L.fmt(Math.pow(2, survey.dimension))}× you saw.</p>
       <p>That slope is the coast's <strong>fractal dimension</strong>: more than a line, less than an area.</p>`,
     [{label: "And real coasts?", primary: true, run: realPanel}], null, {after: () => drawLogLog("loglog")});
   }
@@ -568,7 +573,7 @@
     const calls = [];
     if (G.settle) calls.push(L.settleVerdict(G.settle, survey.chains).right);
     if (G.kochArea || G.kochCoast) { const k = L.kochVerdict(G.kochArea, G.kochCoast); if (G.kochArea) calls.push(k.areaRight); if (G.kochCoast) calls.push(k.coastRight); }
-    if (G.halve && G.cast.length >= 3) calls.push(L.halveVerdict(G.halve, G.cast).right);
+    if (G.halve && G.cast.length >= 2) calls.push(L.halveVerdict(G.halve, G.cast.slice(0, 2)).right);
     if (G.shape) calls.push(L.shapeVerdict(G.shape, survey.dimension).right);
     const right = calls.filter(Boolean).length;
     const tally = calls.length ? `<p class="tally">You made ${calls.length} guess${calls.length === 1 ? "" : "es"} and called ${right === calls.length ? "every one" : right === 0 ? "none of them" : `${right} of them`}.${right < calls.length ? " The surprises are the point." : ""}</p>` : "";

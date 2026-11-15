@@ -108,5 +108,15 @@ body.touch .desk, body:not(.touch) .touch { display:none }
    side, so the goal card and the stick on the left stay in view. */
 @media (orientation: landscape) and (max-height: 520px) {
   #panel { left:auto; right:calc(10px + env(safe-area-inset-right)); transform:none; width:min(560px, 58vw);
-    top:calc(8px + var(--sat)); bottom:calc(8px + var(--sab)); max-height:none; align-content:start; }
+    top:calc(52px + var(--sat)); bottom:calc(8px + var(--sab)); max-height:none; align-content:start; }
+  /* the buttons that move on stay reachable without scrolling the panel */
+  #panel-buttons { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; }
+  .fig.tall { min-height:200px; }
+}
+
+/* Portrait phones: a tall panel stops short of the goal card and scrolls;
+   its buttons stick to the bottom so the way on is always in view. */
+@media (max-width: 520px) and (orientation: portrait) {
+  #panel { max-height:calc(100dvh - 128px - var(--sat) - var(--sab)); }
+  #panel-buttons { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; }
 }

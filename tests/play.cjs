@@ -131,10 +131,11 @@ async function run(name, ctxOpts) {
   await open(); assert.match(await title(), /Count instead/); await ok(); await closed();
   await open(); assert.match(await title(), /16 m net/); await p.waitForTimeout(200); await shot("15-net-16");
   const counts = [await p.textContent("#panel-body .big")];
-  await ok(); await open(); counts.push(await p.textContent("#panel-body .big")); assert.match(await title(), /8 m net/);
-  await ok(); await open(); assert.match(await title(), /Halve it again/); await shot("16-predict-halve");
+  await ok(); await open(); assert.match(await title(), /Halve the mesh/); await shot("16-predict-halve");
+  assert.doesNotMatch(await p.textContent("#panel-body"), /115/, "the guess must not show the 8 m count");
   await p.click("#choices [data-id=between]");
-  await open(); await wait(() => /4 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big")); assert.match(await p.textContent("#panel-body"), /You called it/);
+  await open(); await wait(() => /8 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big")); assert.match(await p.textContent("#panel-body"), /You called it/);
+  await ok(); await open(); await wait(() => /4 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big"));
   await ok(); await open(); await wait(() => /2 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big"));
   await ok(); await open(); await wait(() => /1 m net/.test(document.getElementById("panel-title").textContent)); counts.push(await p.textContent("#panel-body .big")); await shot("17-net-1");
   console.log(name, "nets", counts.join(" / "));
