@@ -71,7 +71,7 @@
     clink() { tone(1800 + Math.random() * 600, 0.09, "square", 0.025); tone(2600 + Math.random() * 400, 0.07, "sine", 0.03, 0.01); },
     whoosh() { noiseBurst(0.6, 700, 0.14); },
     // A committed guess: two notes rising.
-    commit() { tone(523, 0.18, "sine", 0.08); tone(784, 0.3, "sine", 0.07, 0.09); },
+    commit() { tone(523, 0.18, "sine", 0.08); tone(784, 0.3, "sine", 0.07, 0.09); if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) { /* not allowed */ } } },
     // The end of the chart: a small open chord.
     finale() { [392, 523, 659, 784].forEach((f, i) => tone(f, 1.4, "sine", 0.06, i * 0.12)); },
     get muted() { return muted; },
@@ -83,6 +83,11 @@
     },
   };
   window.Sound = Sound;
+  // A minimised or hidden window goes quiet, and picks up again when it's back.
+  document.addEventListener("visibilitychange", () => {
+    if (!ctx) return;
+    if (document.hidden) ctx.suspend(); else ctx.resume();
+  });
   const first = () => { start(); removeEventListener("pointerdown", first, true); removeEventListener("keydown", first, true); };
   addEventListener("pointerdown", first, true);
   addEventListener("keydown", first, true);

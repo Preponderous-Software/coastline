@@ -79,7 +79,9 @@
     G.laid = scene > 1 ? survey.chains.slice() : [];
     G.level = scene > 2 ? L.KOCH_STEPS : 0;
     G.cast = [];
-    if (G.laid.length) showChain(G.laid[G.laid.length - 1]); else clearSlot(SLOT.chain);
+    // The chain belongs to scene 1; later scenes keep the coast clear for the nets
+    // (two tools in four alternating colours blurred together).
+    clearSlot(SLOT.chain);
     showIslet(G.level);
     clearSlot(SLOT.net);
   }
@@ -538,13 +540,22 @@
       <p>That slope is the coast's <strong>fractal dimension</strong>: more than a line, less than an area.</p>`,
     [{label: "And real coasts?", primary: true, run: realPanel}], null, {after: () => drawLogLog("loglog")});
   }
+  /* The ruler (divider) dimension from the three chains: length grows as
+     ruler^(1 - D), so D = 1 - slope of log length against log ruler. */
+  function dividerDimension() {
+    const pts = survey.chains.map((c) => [Math.log(c.ruler), Math.log(c.length)]);
+    const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
+    const slope = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0);
+    return 1 - slope;
+  }
   function realPanel() {
     const all = F.REAL_COASTS;
     const list = all.concat([{name: "This island", d: survey.dimension, here: true}]).sort((a, b) => a.d - b.d);
     const rowsHtml = list.map((r) => `<tr class="${r.here ? "new" : ""}"><td>${r.name}</td><td>${r.here ? "" : "≈ "}${r.d.toFixed(2)}</td></tr>`).join("");
     panel("Real coasts", `<p>Richardson's measurements give real coasts a dimension too. A smooth coast sits near 1; a ragged one climbs higher.</p>
       <table class="table"><thead><tr><th>Coast</th><th>Dimension</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-      <p class="cite">Approximate values from Richardson's data, as read by Mandelbrot, "How long is the coast of Britain?", <em>Science</em>, 1967.</p>`,
+      <p class="cite">Approximate values from Richardson's data, as read by Mandelbrot, "How long is the coast of Britain?", <em>Science</em>, 1967.</p>
+      <p class="cite">Richardson measured with rulers, as your chains did; the nets count squares instead. For coasts like these the two give close answers: on this island the chains give ${dividerDimension().toFixed(2)} and the nets ${survey.dimension.toFixed(2)}.</p>`,
     [{label: "Finish the chart", primary: true, run: finish}], null);
   }
   function finish() {
@@ -625,7 +636,7 @@
   /* Where Maren stands in each scene. */
   function marenAt() {
     if (G.mode === "free" || G.mode === "title") return S.master;
-    const s = [S.cairn, S.tray, S.netPost][G.scene - 1], away = [2.0, 1.9, 1.6][G.scene - 1];
+    const s = [S.cairn, S.tray, S.netPost][G.scene - 1], away = [2.0, 1.9, 2.4][G.scene - 1];   // scene 3: give the nets and the slate room
     const side = [-S.inland[1], S.inland[0]];
     return {x: s.x + side[0] * away + S.inland[0] * 0.6, z: s.z + side[1] * away + S.inland[1] * 0.6};
   }
@@ -701,7 +712,7 @@
     a.hidden = p.on;
     if (!p.on) {
       const x = (p.nx + 1) / 2 * rect.width, y = (1 - p.ny) / 2 * rect.height;
-      a.style.transform = `translate(${x}px,${y}px) rotate(${-p.angle}rad) translate(-11px,-11px)`;
+      a.style.transform = `translate(${x}px,${y}px) rotate(${-p.angle}rad) translate(-17px,-17px)`;
     }
   }
   function useNow() { if (activeUse && !busy()) { const u = activeUse; activeUse = null; u.run(); } }
