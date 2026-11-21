@@ -60,19 +60,21 @@ Nothing in the game is typed in by hand. Every number is computed from one coast
 | `web/scene.js` | The island's ground, the camp, and the chain, net and islet meshes |
 | `web/main.js` | Engine boot, input, HUD, panels, figures and story |
 | `web/vendor/` | The Strata kit and the arcade hall's prebuilt engine and walking code, unmodified |
-| `tools/` | The Windows launcher and its small server |
+| `tools/` | The Windows launcher and its small server, and `build-release.sh` (the release zip) |
 
 ## Test it
 
 ```sh
-node tests/fractal.test.cjs
-node tests/lessons.test.cjs
-node tests/scene.test.cjs
+npm test   # measuring, lessons, layout and saves (tests/fixtures/saves)
 npm i --no-save playwright@1.61.1 && npx playwright install chromium   # once
 node tests/play.cjs shots   # needs the server running
 ```
 
 `tests/play.cjs` plays scenes 1 to 3 in Chromium with software GL on a desktop, a Pixel 7 and an iPhone 14 viewport. It takes screenshots of each scene and fails on console errors or horizontal overflow. Set `BASE` to test another address.
+
+## Releases
+
+Releases are cut by the fleet's release automation from version tags; the arcade keeps deploying `main`. See [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Related
 

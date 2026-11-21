@@ -6,7 +6,7 @@
   "use strict";
   const KEY = "coastline.muted";
   let ctx = null, master = null, sea = null;
-  let muted = (window.StrataKit && StrataKit.store.get(KEY)) === "1";
+  let muted = Lessons.parseMuted(window.StrataKit ? StrataKit.store.get(KEY) : null);
 
   function start() {
     if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
