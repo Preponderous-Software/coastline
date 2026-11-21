@@ -1,0 +1,10 @@
+{
+  "name": "coastline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A walkable 3D island that teaches fractals.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/fractal.test.cjs && node tests/lessons.test.cjs && node tests/scene.test.cjs && node tests/saves.test.cjs"
+  }
+}

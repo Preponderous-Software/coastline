@@ -81,6 +81,13 @@
     return {right: +choice === near, d, near};
   }
 
+  /* The format of the save under "coastline.v1": {reached, done}.
+     Contract: bump SAVE_VERSION whenever a stored format changes, teach
+     parseSave (or parseMuted) to migrate the older format on load, and add a
+     new fixture v<N>-<name>.json in tests/fixtures/saves. Released fixtures
+     never change (tests/saves.test.cjs loads every one of them). */
+  const SAVE_VERSION = 1;
+
   /* Saves keep only how far the player has got. */
   function parseSave(raw) {
     const out = {reached: 1, done: false};
@@ -94,8 +101,11 @@
     return out;
   }
 
+  /* "coastline.muted" holds "1" when the player turned the sound off. */
+  function parseMuted(raw) { return raw === "1"; }
+
   const Lessons = {SCENES, KOCH_STEPS, KOCH_PREDICT_AT, fmtM, fmt, SETTLE_CHOICES, settleVerdict, KOCH_AREA, KOCH_COAST,
-    kochVerdict, kochCoastAfter, HALVE_CHOICES, ratios, halveVerdict, SHAPE_CHOICES, shapeVerdict, parseSave};
+    kochVerdict, kochCoastAfter, HALVE_CHOICES, ratios, halveVerdict, SHAPE_CHOICES, shapeVerdict, SAVE_VERSION, parseSave, parseMuted};
   if (typeof module !== "undefined" && module.exports) module.exports = Lessons;
   else root.Lessons = Lessons;
 })(typeof window !== "undefined" ? window : globalThis);
