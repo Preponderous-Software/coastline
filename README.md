@@ -1,10 +1,10 @@
-# Coastline (working title)
+# Coastline
 
 A walkable 3D island that teaches fractals, in the browser on Strata. You are a cartographer's apprentice, and your first job sounds easy: measure the coast. Desktop and phone both work.
 
 ![Laying the 1 m chain round the island](docs/preview/chain.png)
 
-This is a local first playable of scenes 1 to 3. It has no remote and isn't published anywhere.
+It has three scenes and is [live in the browser](https://coastline.play.danielstephenson.dev):
 
 1. **The Ruler:** lay 100 m, 10 m and 1 m chains round the coast. Guess before the last one whether the length will settle. It doesn't: the answer depends on your ruler (Richardson, and Mandelbrot's 1967 "How long is the coast of Britain?").
 2. **The Snowflake:** add bumps to every edge of a triangle islet in the sand tray. Guess where the area and the coastline end up. The area stops at 8/5 of the triangle, but the coast grows 4/3 longer at every step, without end.
