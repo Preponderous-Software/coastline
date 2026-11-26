@@ -54,6 +54,7 @@ body.touch #prompt { bottom:calc(150px + var(--sab)); min-height:54px; font-size
 .big { font:700 1.6rem/1.1 var(--tally); color:var(--chain) }
 .fig { width:100%; height:min(250px,34dvh); display:block; background:#cfe3ea; border-radius:6px }
 .fig.tall { height:min(300px,40dvh); background:#fff }
+.fig.small { height:min(170px,26dvh) }
 .cap { font-size:.875rem; color:var(--muted) }
 .table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; font-size:.9375rem }
 .table th,.table td { padding:3px 8px 3px 0; border-bottom:1px solid var(--rule); text-align:right }
@@ -80,13 +81,13 @@ body.touch .desk, body:not(.touch) .touch { display:none }
 @media (max-width: 520px) {
   .wide { display:none } .narrow { display:inline }
   #hud-buttons { flex-wrap:nowrap } #hud-buttons button { padding:6px 9px }
-  #goal { max-width:calc(100vw - 190px) }
+  #goal { max-width:calc(100vw - 190px) } #scene { letter-spacing:.03em }
 }
 
 /* Sound toggle: a struck-through note when muted. */
 #mute { position: relative; }
-#mute.off span { opacity: .45; }
-#mute.off::after { content: ""; position: absolute; left: 22%; right: 22%; top: 50%; height: 2px; background: currentColor; transform: rotate(-35deg); }
+#mute.off span { opacity: .8; }
+#mute.off::after { content: ""; position: absolute; left: 24%; right: 24%; top: calc(50% - 1px); height: 2.5px; border-radius: 2px; background: var(--chain); box-shadow: 0 0 0 1px var(--paper); transform: rotate(-35deg); }
 
 /* The ending: a clear "it's over" marker, the guess tally, and what's next. */
 .kicker { font: 700 .78rem/1.2 "Courier Prime", ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; color: #9a4a2a; margin: 0 0 .4rem; }
@@ -108,15 +109,28 @@ body.touch .desk, body:not(.touch) .touch { display:none }
    side, so the goal card and the stick on the left stay in view. */
 @media (orientation: landscape) and (max-height: 520px) {
   #panel { left:auto; right:calc(10px + env(safe-area-inset-right)); transform:none; width:min(560px, 58vw);
-    top:calc(52px + var(--sat)); bottom:calc(8px + var(--sab)); max-height:none; align-content:start; }
+    top:calc(52px + var(--sat)); bottom:auto; max-height:calc(100dvh - 60px - var(--sat) - var(--sab)); align-content:start; }
   /* the buttons that move on stay reachable without scrolling the panel */
   #panel-buttons { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; }
   .fig.tall { min-height:200px; }
+  /* a guess's choices sit side by side and stay in view, like the buttons
+     (the second choice was below the fold, so a guess looked one-sided) */
+  .choices { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; grid-template-columns:1fr 1fr; }
+  .choices .btn { min-height:42px; padding:6px 12px; }
+  /* the goal card stops short of the panel instead of running under it */
+  #goal { max-width:calc(42vw - 32px - var(--sal)); }
 }
 
 /* Portrait phones: a tall panel stops short of the goal card and scrolls;
    its buttons stick to the bottom so the way on is always in view. */
 @media (max-width: 520px) and (orientation: portrait) {
   #panel { max-height:calc(100dvh - 128px - var(--sat) - var(--sab)); }
-  #panel-buttons { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; }
+  #panel-buttons, .choices { position:sticky; bottom:-15px; background:var(--paper); padding:8px 0 4px; margin-bottom:-4px; }
 }
+
+/* The notebook button arrives with the first number written in it. */
+@keyframes notebook-new { 0% { transform:scale(.6); opacity:0 } 60% { transform:scale(1.12); box-shadow:0 0 0 6px rgba(242,193,78,.9) } 100% { transform:none } }
+#notebook.fresh { animation:notebook-new .9s ease-out }
+
+/* On the title, after the last scene: a stamp that the chart is done. */
+.done-badge { justify-self:start; padding:3px 10px; border:2px solid var(--brass); border-radius:4px; color:var(--brass); font:700 .8125rem var(--tally); letter-spacing:.08em; text-transform:uppercase; transform:rotate(-2deg) }
