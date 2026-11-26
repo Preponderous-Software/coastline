@@ -62,8 +62,12 @@
     const prev = loadSave();
     StrataKit.store.set(SAVE_KEY, JSON.stringify({reached: G.reached, done: !!(done || prev.done)}));
   }
-  const sceneLabel = () => `Scene ${G.scene} · ${L.SCENES[G.scene - 1].name}`;
-  function goal(text) { $("scene").textContent = G.mode === "free" ? "The island" : sceneLabel(); $("objective").textContent = text; }
+  function goal(text) {
+    // Phones drop the word "Scene" so the label stays on one line beside the buttons.
+    if (G.mode === "free") $("scene").textContent = "The island";
+    else $("scene").innerHTML = `<span class="wide">Scene </span>${G.scene} · ${L.SCENES[G.scene - 1].name}`;
+    $("objective").textContent = text;
+  }
 
   function enter(scene, spawn) {
     Object.assign(G, {mode: "play", scene, reached: Math.max(G.reached, scene), step: "", busy: false});
@@ -93,6 +97,7 @@
     if (fading || G.mode !== "play") return;
     if (!$("panel").hidden) { toast("Close this panel first."); return; }
     if (G.busy) { toast("Wait for the chain to settle."); return; }
+    if (G.step === "look") { toast("Look at the islet a moment first."); return; }
     const last = G.scene === L.SCENES.length, next = L.SCENES[G.scene];
     panel(`Skip scene ${G.scene}?`, last
       ? "<p>Last scene. Goes to the end.</p>"
@@ -207,6 +212,9 @@
   let toastTimer = 0;
   function toast(text, ms = 3800) {
     $("toast").textContent = text; $("toast").hidden = false;
+    // Sit just under the HUD, whose goal card wraps to more lines on a phone.
+    const hud = $("hud");
+    if (!hud.hidden) $("toast").style.top = `${Math.round(hud.getBoundingClientRect().bottom) + 8}px`;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { $("toast").hidden = true; }, ms);
   }
@@ -433,7 +441,7 @@
     G.level = 0; G.kochArea = null; G.kochCoast = null;
     showIslet(0); drawSlate();
     G.step = "tray";
-    goal("Maren is at the sand tray.");
+    goal("Join Maren at the sand tray.");
   }
   function trayIntro() {
     G.step = "bumps";
@@ -449,8 +457,10 @@
     const r = F.kochTable(G.level).rows[G.level];
     toast(`Step ${G.level}: ${r.edges.toLocaleString("en-US")} edges. Coast ${L.fmt(r.coast)}×, area ${L.fmt(r.area, 3)}× the triangle.`, 4200);
     // A moment to look at the new bumps, with nothing to press, then the panel.
-    if (G.level === L.KOCH_PREDICT_AT) { G.step = "look"; setTimeout(predictKochArea, reducedMotion ? 300 : 1400); }
-    else if (G.level === L.KOCH_STEPS) { G.step = "look"; setTimeout(kochReveal, reducedMotion ? 300 : 1400); }
+    // The beat's panel opens only if the player is still in it (not on the title or in another scene).
+    const after = (fn) => setTimeout(() => { if (G.mode === "play" && G.scene === 2 && G.step === "look") fn(); }, reducedMotion ? 300 : 1400);
+    if (G.level === L.KOCH_PREDICT_AT) { G.step = "look"; after(predictKochArea); }
+    else if (G.level === L.KOCH_STEPS) { G.step = "look"; after(kochReveal); }
     goal(G.step === "look" ? "Look at the islet." : `Add bumps: step ${G.level + 1} of ${L.KOCH_STEPS}.`);
   }
   function predictKochArea() {
@@ -493,7 +503,7 @@
     G.cast = []; G.halve = null; G.shape = null;
     clearSlot(SLOT.net); clearSlot(SLOT.chain); drawSlate();
     G.step = "post";
-    goal("Maren is at the net post.");
+    goal("Join Maren at the net post.");
   }
   function netIntro() {
     G.step = "nets";
@@ -588,13 +598,26 @@
   }
 
   /* ------------------------------------------------------- the notebook */
+  /* The notebook: the latest measurement drawn, then every number so far in
+     small tables (one per tool), not sentences. */
   function notebookPanel() {
-    const items = [];
-    if (G.laid.length) items.push(`<li>Chains: ${G.laid.map((c) => `${c.ruler} m → ${fmtM(c.length)}`).join(", ")}.</li>`);
-    if (G.level) { const r = F.kochTable(G.level).rows[G.level]; items.push(`<li>Islet after ${G.level} steps: coast ${L.fmt(r.coast)}×, area ${L.fmt(r.area, 3)}×.</li>`); }
-    if (G.cast.length) items.push(`<li>Nets: ${G.cast.map((n) => `${n.size} m → ${n.count}`).join(", ")}.</li>`);
-    if (G.mode === "free") items.push(`<li>Dimension of the coast: ${survey.dimension.toFixed(2)}.</li>`);
-    panel("Notebook", items.length ? `<ul class="learned">${items.join("")}</ul>` : "<p>Nothing measured yet.</p>", [{label: "Close", primary: true, run: closePanel}], closePanel);
+    const parts = [];
+    const table = (head, rows) => `<table class="table"><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    // What to draw: whatever the player handled last in this scene.
+    let draw = null;
+    if (G.cast.length && G.scene === 3) { const n = G.cast[G.cast.length - 1]; draw = () => drawMap("nb-fig", {net: n.size, label: `The ${n.size} m net over the island: ${n.count} squares touch the coast.`}); }
+    else if (G.level && G.scene === 2) draw = () => drawKoch("nb-fig", G.level);
+    else if (G.laid.length) { const c = G.laid[G.laid.length - 1]; draw = () => drawMap("nb-fig", {chain: c, label: `The ${c.ruler} m chain laid round the island.`}); }
+    if (draw) parts.push(figure("nb-fig", "small"));
+    if (G.laid.length) parts.push(table(["Chain", "Coast"], G.laid.map((c) => [`${c.ruler} m`, fmtM(c.length)])));
+    if (G.level) {
+      // The islet's latest step only: its earlier steps are on the sand-tray slate.
+      const r = F.kochTable(G.level).rows[G.level];
+      parts.push(table(["Islet", "Coast", "Area"], [[`step ${r.step}`, `${L.fmt(r.coast)}×`, `${L.fmt(r.area, 3)}×`]]));
+    }
+    if (G.cast.length) parts.push(table(["Net", "Squares"], G.cast.map((n) => [`${n.size} m`, n.count.toLocaleString("en-US")])));
+    if (G.mode === "free") parts.push(`<p>Dimension of the coast: <strong>${survey.dimension.toFixed(2)}</strong></p>`);
+    panel("Notebook", parts.length ? parts.join("") : "<p>Nothing measured yet.</p>", [{label: "Close", primary: true, run: closePanel}], closePanel, {after: draw || undefined});
   }
 
   /* --------------------------------------------------------- the world */
@@ -706,7 +729,16 @@
       pr.dataset.id = activeUse.id + activeUse.label;
       pr.innerHTML = `<kbd>E</kbd>${activeUse.label}`;
     }
+    if (!busy()) showNotebookButton();   // after "Write it down", not under the panel
     pointArrow();
+  }
+  /* The notebook button appears once there is something in it, with a short
+     pulse the first time so the player sees where their numbers went. */
+  function showNotebookButton() {
+    const b = $("notebook"), has = G.laid.length > 0 || G.level > 0 || G.cast.length > 0 || G.mode === "free";
+    if (b.hidden !== has) return;
+    b.hidden = !has;
+    if (has && !reducedMotion) { b.classList.remove("fresh"); void b.offsetWidth; b.classList.add("fresh"); }
   }
   function pointArrow() {
     const a = $("arrow");
@@ -716,7 +748,10 @@
     const p = K.project(v, markerPoint);
     a.hidden = p.on;
     if (!p.on) {
-      const x = (p.nx + 1) / 2 * rect.width, y = (1 - p.ny) / 2 * rect.height;
+      // Kept a whole arrow's length inside the screen (it was half cut off at the edge on phones).
+      const M = 30, clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+      const x = clamp((p.nx + 1) / 2 * rect.width, M, rect.width - M), top = $("hud").hidden ? 0 : $("hud").getBoundingClientRect().bottom;
+      const y = clamp((1 - p.ny) / 2 * rect.height, top + M, rect.height - M);
       a.style.transform = `translate(${x}px,${y}px) rotate(${-p.angle}rad) translate(-17px,-17px)`;
     }
   }
@@ -742,7 +777,7 @@
     Sound.start();
     const off = Sound.toggle();
     syncMute();
-    toast(off ? "Sound off. M turns it back on." : "Sound on.", 1800);
+    toast(off ? (touchFirst ? "Sound off." : "Sound off. M turns it back on.") : "Sound on.", 1800);
   }
   function syncMute() {
     if (!window.Sound) return;
@@ -834,7 +869,9 @@
     };
     const name = (n) => `Scene ${n}, ${L.SCENES[n - 1].name}`;
     const resume = save.reached > 1 && !save.done ? save.reached : 1;
-    add(resume > 1 ? `Continue: ${name(resume)}` : "Begin", true, () => startScene(resume, true));
+    // A finished chart is acknowledged, and starting again says so.
+    $("title-done").hidden = !save.done;
+    add(resume > 1 ? `Continue: ${name(resume)}` : save.done ? "Begin again" : "Begin", true, () => startScene(resume, true));
     L.SCENES.forEach((s) => { if (s.n !== resume) add(name(s.n), false, () => startScene(s.n, true)); });
     $("title").hidden = false;
     $("stick").hidden = true;   // the stick is for walking, not the title
